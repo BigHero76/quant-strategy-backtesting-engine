@@ -1,38 +1,96 @@
 # Quant Strategy Backtesting Engine
 
-Full-stack MVP for testing rule-based trading strategies on historical market data.
+This is my full-stack backtesting engine for testing trading strategies on historical market data.
 
-## What is included
+The idea is simple: instead of guessing whether a strategy would have worked, I wanted to build something that answers:
 
-- FastAPI backend with a `/backtest` endpoint
-- yfinance historical data fetching
-- Indicator engine for EMA, RSI, and MACD
-- Strategy engine for:
-  - EMA crossover
-  - RSI mean reversion
-  - MACD crossover
-- Backtester with:
-  - transaction costs
-  - slippage
-  - no future leakage signal execution
-  - cash, shares, portfolio value, and trade log tracking
-- Metrics:
-  - final value
-  - total return
-  - CAGR
-  - max drawdown
-  - Sharpe ratio
-  - win rate
-  - average profit per trade
-  - buy-and-hold return
-- React dashboard with:
-  - input form
-  - metrics cards
-  - price chart with buy/sell markers
-  - equity, benchmark, and drawdown chart
-  - trade log
+```text
+If I used this strategy on this stock during this time period,
+what return, risk, drawdown, and trade history would I get?
+```
 
-## Backend setup
+For example, I can test an EMA 20/50 crossover on a stock like `AAPL` or `RELIANCE.NS` with a starting capital of `100000`, and the app shows the performance, trades, charts, and comparison with buy-and-hold.
+
+## What it does
+
+The app lets a user:
+
+- enter a stock ticker
+- choose a date range
+- enter starting capital
+- select a strategy
+- run a backtest
+- view performance metrics
+- see charts and trade history
+
+Right now, the MVP supports these strategies:
+
+- EMA crossover
+- RSI mean reversion
+- MACD crossover
+
+## Tech stack
+
+Backend:
+
+- FastAPI
+- Python
+- Pandas
+- NumPy
+- yfinance
+
+Frontend:
+
+- React
+- Vite
+- Recharts
+- CSS
+
+## Features
+
+- Fetches historical price data using `yfinance`
+- Calculates indicators like EMA, RSI, and MACD
+- Generates buy and sell signals
+- Simulates trades with available capital
+- Tracks cash, shares, portfolio value, and trade history
+- Includes transaction cost and slippage
+- Avoids future leakage by executing signals after they are generated
+- Compares strategy performance with buy-and-hold
+
+## Metrics shown
+
+The dashboard shows:
+
+- final portfolio value
+- total return
+- CAGR
+- max drawdown
+- Sharpe ratio
+- win rate
+- number of trades
+- average profit per trade
+- buy-and-hold return
+
+## Project structure
+
+```text
+backend/
+  main.py
+  data_fetcher.py
+  indicators.py
+  backtester.py
+  metrics.py
+  schemas.py
+  strategies/
+
+frontend/
+  src/
+    api/
+    components/
+    App.jsx
+```
+
+## Running the backend
 
 ```bash
 cd backend
@@ -42,7 +100,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-API runs at:
+The backend runs at:
 
 ```text
 http://localhost:8000
@@ -54,7 +112,7 @@ Health check:
 http://localhost:8000/health
 ```
 
-## Frontend setup
+## Running the frontend
 
 ```bash
 cd frontend
@@ -62,13 +120,13 @@ npm install
 npm run dev
 ```
 
-Frontend runs at:
+The frontend runs at:
 
 ```text
 http://localhost:5173
 ```
 
-## Example API request
+## Example request
 
 ```json
 {
@@ -86,24 +144,25 @@ http://localhost:5173
 }
 ```
 
-## Extra strategies to add after the MVP
+## What I want to add next
 
-Good beginner-friendly additions:
+Some strategies/features I want to add after this MVP:
 
-- Bollinger Bands mean reversion: buy near/below lower band, sell near/above upper band.
-- Moving average trend filter: only take long trades when price is above the 200-day SMA.
-- Donchian breakout: buy when price breaks the highest high of the last N days, sell on lowest low.
-- Supertrend strategy: buy when Supertrend flips bullish, sell when it flips bearish.
-- VWAP strategy: useful intraday later; buy when price reclaims VWAP with volume confirmation.
-- ATR trailing stop strategy: not exactly an entry strategy, but excellent for realistic exits.
+- Bollinger Bands mean reversion
+- Supertrend
+- Donchian breakout
+- ATR-based stop loss and trailing stop loss
+- 200-day moving average trend filter
+- volume-confirmed breakouts
+- portfolio backtesting with multiple stocks
+- saved backtest results
+- ML-based signal filtering
 
-More portfolio-worthy upgrades:
+The ML idea is to use technical indicators as features and predict whether the price is likely to move up over the next few days. Then the normal strategy signal can be filtered using model confidence.
 
-- Pairs trading: trade the spread between two correlated stocks.
-- Momentum ranking: rank a basket of stocks by 3-month/6-month return and hold top N.
-- Mean reversion with z-score: buy when price is statistically stretched below its rolling mean.
-- Breakout with volume confirmation: buy breakouts only when volume is above average.
-- ML-filtered signals: take EMA/RSI/MACD signals only when model confidence is above a threshold.
+## Why I built this
 
-For the next best implementation step, Bollinger Bands plus ATR stop-loss is a strong combo: it is understandable, realistic, and shows you care about risk management rather than just entries.
+I wanted this project to be more realistic than a basic stock price prediction app. Backtesting forces me to think about actual trading logic, risk, transaction costs, slippage, drawdowns, and whether a strategy really beats a simple buy-and-hold approach.
+
+This is still an MVP, but it already has the main pieces of a real backtesting workflow.
 
