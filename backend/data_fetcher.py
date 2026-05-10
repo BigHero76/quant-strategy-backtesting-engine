@@ -5,26 +5,73 @@ import yfinance as yf
 REQUIRED_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
 
 
-def fetch_price_data(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
-    data = yf.download(
-        ticker,
-        start=start_date,
-        end=end_date,
-        auto_adjust=True,
-        progress=False,
-    )
-
+def _normalize_price_data(data: pd.DataFrame) -> pd.DataFrame:
     if data.empty:
-        raise ValueError(f"No price data found for ticker '{ticker}'.")
+        return data
 
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.get_level_values(0)
 
     data = data.reset_index()
+    date_column = "Date" if "Date" in data.columns else data.columns[0]
+    data = data.rename(columns={date_column: "Date"})
     data["Date"] = pd.to_datetime(data["Date"]).dt.date
+
+    if "Close" not in data.columns and "Adj Close" in data.columns:
+        data["Close"] = data["Adj Close"]
+
     missing = [col for col in REQUIRED_COLUMNS if col not in data.columns]
     if missing:
         raise ValueError(f"Missing expected columns from data source: {missing}")
 
     return data[["Date", *REQUIRED_COLUMNS]].dropna().reset_index(drop=True)
 
+
+def _fetch_with_download(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
+    return yf.download(
+        ticker,
+        start=start_date,
+        end=end_date,
+        auto_adjust=True,
+        progress=False,
+        threads=False,
+    )
+
+
+def _fetch_with_history(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
+    return yf.Ticker(ticker).history(
+        start=start_date,
+        end=end_date,
+        auto_adjust=True,
+    )
+
+
+def _fetch_with_stooq(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
+    if "." in ticker:
+        return pd.DataFrame()
+
+    start = pd.to_datetime(start_date).strftime("%Y%m%d")
+    end = pd.to_datetime(end_date).strftime("%Y%m%d")
+    stooq_symbol = ticker.lower()
+    if not stooq_symbol.endswith(".us"):
+        stooq_symbol = f"{stooq_symbol}.us"
+
+    url = f"https://stooq.com/q/d/l/?s={stooq_symbol}&d1={start}&d2={end}&i=d"
+    return pd.read_csv(url)
+
+
+def fetch_price_data(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
+    errors: list[str] = []
+
+    for fetcher in (_fetch_with_download, _fetch_with_history, _fetch_with_stooq):
+        try:
+            data = _normalize_price_data(fetcher(ticker, start_date, end_date))
+            if not data.empty:
+                return data
+        except Exception as exc:
+            errors.append(f"{fetcher.__name__}: {exc}")
+
+    detail = "; ".join(errors) if errors else "all data sources returned empty data"
+    raise ValueError(
+        f"No price data found for ticker '{ticker}'. Check the ticker, date range, and internet access. Details: {detail}"
+    )
