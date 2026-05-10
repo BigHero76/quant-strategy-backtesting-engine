@@ -1,3 +1,4 @@
+import React from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -43,4 +44,3 @@ function PriceChart({ prices, signals }) {
 }
 
 export default PriceChart;
-

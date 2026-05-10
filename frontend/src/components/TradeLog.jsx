@@ -1,3 +1,5 @@
+import React from "react";
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -53,4 +55,3 @@ function TradeLog({ trades }) {
 }
 
 export default TradeLog;
-

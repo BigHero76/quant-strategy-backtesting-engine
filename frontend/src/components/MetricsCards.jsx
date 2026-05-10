@@ -1,3 +1,5 @@
+import React from "react";
+
 const labels = {
   final_value: "Final Value",
   total_return: "Total Return",
@@ -38,4 +40,3 @@ function MetricsCards({ metrics }) {
 }
 
 export default MetricsCards;
-

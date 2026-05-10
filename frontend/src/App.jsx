@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Activity, BarChart3, Play, Settings2 } from "lucide-react";
 
 import { runBacktest } from "./api/backtestApi";

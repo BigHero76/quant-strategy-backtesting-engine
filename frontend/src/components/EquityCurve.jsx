@@ -1,3 +1,4 @@
+import React from "react";
 import {
   CartesianGrid,
   Line,
@@ -38,4 +39,3 @@ function EquityCurve({ equity, drawdown, benchmark }) {
 }
 
 export default EquityCurve;
-
