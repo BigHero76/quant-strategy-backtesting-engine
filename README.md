@@ -37,7 +37,7 @@ Backend:
 - Python
 - Pandas
 - NumPy
-- yfinance
+- yfinance (with Yahoo Finance API fallback)
 
 Frontend:
 
@@ -48,7 +48,7 @@ Frontend:
 
 ## Features
 
-- Fetches historical price data using `yfinance`
+- Fetches historical price data using `yfinance` with fallback to Yahoo Finance chart API
 - Calculates indicators like EMA, RSI, and MACD
 - Generates buy and sell signals
 - Simulates trades with available capital
@@ -90,7 +90,9 @@ frontend/
     App.jsx
 ```
 
-## Running the backend
+## Running the project
+
+### Backend
 
 ```bash
 cd backend
@@ -98,6 +100,28 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload
+```
+
+The backend will run on `http://localhost:8000`.
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will run on `http://localhost:5173` (or similar, check the terminal output).
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `POST /backtest` - Run a backtest
+
+## CORS Configuration
+
+The backend allows CORS from `http://localhost:5173` and `http://localhost:5175` for development.
 ```
 
 The backend runs at:

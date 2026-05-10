@@ -1,4 +1,5 @@
 import pandas as pd
+import requests
 import yfinance as yf
 
 
@@ -46,6 +47,40 @@ def _fetch_with_history(ticker: str, start_date: str, end_date: str) -> pd.DataF
     )
 
 
+def _fetch_with_yahoo_chart(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
+    start_ts = int(pd.to_datetime(start_date).timestamp())
+    end_ts = int(pd.to_datetime(end_date).timestamp())
+    url = (
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?"
+        f"period1={start_ts}&period2={end_ts}&interval=1d&includePrePost=false&events=div%2Csplit"
+    )
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+    response = requests.get(url, headers=headers, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+
+    result = data.get("chart", {}).get("result")
+    if not result:
+        return pd.DataFrame()
+
+    result = result[0]
+    timestamps = result.get("timestamp") or []
+    quote = result.get("indicators", {}).get("quote", [{}])[0]
+    df = pd.DataFrame(
+        {
+            "Date": pd.to_datetime(timestamps, unit="s").date,
+            "Open": quote.get("open", []),
+            "High": quote.get("high", []),
+            "Low": quote.get("low", []),
+            "Close": quote.get("close", []),
+            "Volume": quote.get("volume", []),
+        }
+    )
+    return df.dropna().reset_index(drop=True)
+
+
 def _fetch_with_stooq(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
     if "." in ticker:
         return pd.DataFrame()
@@ -63,7 +98,12 @@ def _fetch_with_stooq(ticker: str, start_date: str, end_date: str) -> pd.DataFra
 def fetch_price_data(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
     errors: list[str] = []
 
-    for fetcher in (_fetch_with_download, _fetch_with_history, _fetch_with_stooq):
+    for fetcher in (
+        _fetch_with_download,
+        _fetch_with_history,
+        _fetch_with_yahoo_chart,
+        _fetch_with_stooq,
+    ):
         try:
             data = _normalize_price_data(fetcher(ticker, start_date, end_date))
             if not data.empty:
