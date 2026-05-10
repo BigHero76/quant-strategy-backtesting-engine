@@ -56,35 +56,49 @@ def _fetch_with_history(ticker: str, start_date: str, end_date: str) -> pd.DataF
 def _fetch_with_yahoo_chart(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
     start_ts = int(pd.to_datetime(start_date).timestamp())
     end_ts = int(pd.to_datetime(end_date).timestamp())
-    url = (
-        f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?"
-        f"period1={start_ts}&period2={end_ts}&interval=1d&includePrePost=false&events=div%2Csplit"
-    )
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    }
-    response = requests.get(url, headers=headers, timeout=30)
-    response.raise_for_status()
-    data = response.json()
 
-    result = data.get("chart", {}).get("result")
-    if not result:
-        return pd.DataFrame()
+    tickers_to_try = [ticker]
+    if '.' not in ticker:
+        # Try common suffixes for international stocks
+        tickers_to_try.extend([f"{ticker}.NS", f"{ticker}.BO", f"{ticker}.L", f"{ticker}.DE"])
 
-    result = result[0]
-    timestamps = result.get("timestamp") or []
-    quote = result.get("indicators", {}).get("quote", [{}])[0]
-    df = pd.DataFrame(
-        {
-            "Date": pd.to_datetime(timestamps, unit="s").date,
-            "Open": quote.get("open", []),
-            "High": quote.get("high", []),
-            "Low": quote.get("low", []),
-            "Close": quote.get("close", []),
-            "Volume": quote.get("volume", []),
+    for t in tickers_to_try:
+        url = (
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?"
+            f"period1={start_ts}&period2={end_ts}&interval=1d&includePrePost=false&events=div%2Csplit"
+        )
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         }
-    )
-    return df.dropna().reset_index(drop=True)
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            result = data.get("chart", {}).get("result")
+            if not result:
+                continue
+
+            result = result[0]
+            timestamps = result.get("timestamp") or []
+            quote = result.get("indicators", {}).get("quote", [{}])[0]
+            df = pd.DataFrame(
+                {
+                    "Date": pd.to_datetime(timestamps, unit="s").date,
+                    "Open": quote.get("open", []),
+                    "High": quote.get("high", []),
+                    "Low": quote.get("low", []),
+                    "Close": quote.get("close", []),
+                    "Volume": quote.get("volume", []),
+                }
+            )
+            df = df.dropna().reset_index(drop=True)
+            if not df.empty:
+                return df
+        except (requests.RequestException, ValueError, KeyError):
+            continue
+
+    return pd.DataFrame()
 
 
 def _fetch_with_stooq(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
