@@ -1,6 +1,12 @@
 import pandas as pd
 import requests
 import yfinance as yf
+import logging
+import warnings
+
+
+logging.getLogger('yfinance').setLevel(logging.ERROR)
+warnings.filterwarnings('ignore', module='yfinance')
 
 
 REQUIRED_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
