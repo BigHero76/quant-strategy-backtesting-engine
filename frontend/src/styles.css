@@ -147,6 +147,17 @@ select:focus {
   border-color: rgba(62, 208, 115, 0.6);
 }
 
+select option {
+  background: var(--panel);
+  color: #f3fff7;
+  padding: 8px;
+}
+
+select option:hover,
+select option:focus {
+  background: rgba(62, 208, 115, 0.2);
+}
+
 button,
 input,
 select {
