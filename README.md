@@ -137,7 +137,9 @@ http://localhost:8000/health
 ```
 
 ## Running the frontend
+```
 <img width="1886" height="953" alt="image" src="https://github.com/user-attachments/assets/4547ead2-7d85-450c-8357-8dbc76330495" />
+```
 
 ```bash
 cd frontend
