@@ -24,6 +24,11 @@ function App() {
     slippage: 0.001,
   });
   const [params, setParams] = useState(strategyDefaults.ema_crossover);
+  const [chartOptions, setChartOptions] = useState({
+    show_bollinger: true,
+    band_period: 20,
+    band_std: 2,
+  });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,6 +44,14 @@ function App() {
   function updateParam(event) {
     const { name, value } = event.target;
     setParams((current) => ({ ...current, [name]: Number(value) }));
+  }
+
+  function updateChartOption(event) {
+    const { name, value, type, checked } = event.target;
+    setChartOptions((current) => ({
+      ...current,
+      [name]: type === "checkbox" ? checked : Number(value),
+    }));
   }
 
   async function handleSubmit(event) {
@@ -114,6 +127,45 @@ function App() {
               ))}
             </div>
 
+            <div className="param-box">
+              <div className="section-title">
+                <Settings2 size={17} />
+                <span>Chart overlays</span>
+              </div>
+              <label className="switch-label">
+                <span>Show Bollinger Bands</span>
+                <input
+                  type="checkbox"
+                  name="show_bollinger"
+                  checked={chartOptions.show_bollinger}
+                  onChange={updateChartOption}
+                />
+              </label>
+              <div className="two-column">
+                <label>
+                  Period
+                  <input
+                    type="number"
+                    min="5"
+                    name="band_period"
+                    value={chartOptions.band_period}
+                    onChange={updateChartOption}
+                  />
+                </label>
+                <label>
+                  Std Dev
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.1"
+                    name="band_std"
+                    value={chartOptions.band_std}
+                    onChange={updateChartOption}
+                  />
+                </label>
+              </div>
+            </div>
+
             <div className="two-column">
               <label>
                 Cost
@@ -149,7 +201,18 @@ function App() {
           <div className="results-header">
             <div>
               <h2>Results Dashboard</h2>
-              <p>{result ? `${form.ticker} · ${form.strategy.replaceAll("_", " ")}` : "Run a strategy to see metrics, charts, and trades."}</p>
+              {result ? (
+                <>
+                  <div className="results-summary">
+                    <span className="pill">{form.ticker.toUpperCase()}</span>
+                    <span className="pill">{form.strategy.replaceAll("_", " ")}</span>
+                    <span className="pill">{result.metrics.total_trades} trades</span>
+                  </div>
+                  <p>Review strategy performance, chart overlays, and trade history below.</p>
+                </>
+              ) : (
+                <p>Run a strategy to see metrics, charts, and trades.</p>
+              )}
             </div>
             <BarChart3 size={28} />
           </div>
@@ -158,7 +221,13 @@ function App() {
             <>
               <MetricsCards metrics={result.metrics} />
               <div className="chart-grid">
-                <PriceChart prices={result.price_data} signals={result.signals} />
+                <PriceChart
+                  prices={result.price_data}
+                  signals={result.signals}
+                  showBands={chartOptions.show_bollinger}
+                  bandPeriod={chartOptions.band_period}
+                  bandStd={chartOptions.band_std}
+                />
                 <EquityCurve
                   equity={result.equity_curve}
                   drawdown={result.drawdown_curve}
